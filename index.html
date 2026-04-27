@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ordinarymo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Inconsolata:wght@300;400;500&family=Noto+Serif+SC:wght@300;400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #08080a;
+      --bg2: #0d0d10;
+      --surface: #111116;
+      --surface2: #18181f;
+      --border: #1f1f28;
+      --border2: #2a2a38;
+      --text: #e8e4f0;
+      --muted: #5a5870;
+      --muted2: #8a889a;
+      --accent: #a594f9;
+      --accent2: #7c6cd4;
+      --accent-dim: rgba(165,148,249,0.12);
+      --gold: #c9b97b;
+      --gold-dim: rgba(201,185,123,0.1);
+      --mono: 'Inconsolata', monospace;
+      --serif: 'Playfair Display', serif;
+      --cn: 'Noto Serif SC', serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--cn);
+      font-weight: 300;
+      line-height: 1.7;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* Custom cursor */
+    .cursor {
+      position: fixed;
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: width 0.2s, height 0.2s, opacity 0.2s;
+      mix-blend-mode: screen;
+    }
+    .cursor-ring {
+      position: fixed;
+      width: 36px; height: 36px;
+      border: 1px solid rgba(165,148,249,0.4);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: all 0.15s ease;
+    }
+    body:hover .cursor { opacity: 1; }
+
+    /* Noise */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 998;
+    }
+
+    /* Background orbs */
+    .orb {
+      position: fixed; border-radius: 50%;
+      pointer-events: none; filter: blur(80px); z-index: 0;
+    }
+    .orb-1 { width: 500px; height: 500px; top: -150px; right: -100px; background: radial-gradient(circle, rgba(165,148,249,0.08) 0%, transparent 70%); }
+    .orb-2 { width: 400px; height: 400px; bottom: 20%; left: -100px; background: radial-gradient(circle, rgba(201,185,123,0.06) 0%, transparent 70%); }
+    .orb-3 { width: 300px; height: 300px; top: 50%; right: 10%; background: radial-gradient(circle, rgba(124,108,212,0.06) 0%, transparent 70%); }
+
+    /* Nav */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.5rem 5%;
+      transition: all 0.4s;
+    }
+    nav.scrolled { background: rgba(8,8,10,0.92); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+    .nav-logo {
+      font-family: var(--mono);
+      font-size: 0.9rem; letter-spacing: 0.2em;
+      color: var(--accent); text-decoration: none;
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .nav-logo-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: blink 2s infinite; }
+    .nav-links { display: flex; gap: 3rem; list-style: none; }
+    .nav-links a { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.15em; color: var(--muted); text-decoration: none; text-transform: uppercase; transition: color 0.2s; position: relative; }
+    .nav-links a::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 1px; background: var(--accent); transition: width 0.3s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a:hover::after { width: 100%; }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      position: relative; z-index: 1;
+      padding: 0 5%;
+    }
+
+    .hero-left {
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 8rem 6% 6rem 0;
+      border-right: 1px solid var(--border);
+    }
+
+    .hero-right {
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 8rem 0 6rem 6%;
+    }
+
+    .hero-kicker {
+      font-family: var(--mono);
+      font-size: 0.68rem; letter-spacing: 0.3em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 2rem;
+      opacity: 0; animation: fadeUp 0.6s 0.2s forwards;
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .hero-kicker::before { content: ''; width: 24px; height: 1px; background: var(--accent); }
+
+    .hero-name {
+      font-family: var(--serif);
+      font-size: clamp(4rem, 7vw, 6.5rem);
+      line-height: 1.0; font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+      opacity: 0; animation: fadeUp 0.7s 0.35s forwards;
+    }
+    .hero-name-sub {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 1.1; font-weight: 400; font-style: italic;
+      color: var(--accent);
+      margin-bottom: 2.5rem;
+      opacity: 0; animation: fadeUp 0.7s 0.45s forwards;
+    }
+
+    .hero-desc {
+      font-size: 0.95rem; color: var(--muted2); line-height: 1.9;
+      max-width: 440px; margin-bottom: 3rem;
+      opacity: 0; animation: fadeUp 0.7s 0.55s forwards;
+    }
+
+    .hero-links {
+      display: flex; gap: 1rem; flex-wrap: wrap;
+      opacity: 0; animation: fadeUp 0.7s 0.65s forwards;
+    }
+    .hero-link {
+      font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.12em;
+      text-transform: uppercase; text-decoration: none;
+      padding: 0.7rem 1.5rem; border: 1px solid;
+      transition: all 0.25s;
+    }
+    .hero-link-primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    .hero-link-primary:hover { background: transparent; color: var(--accent); }
+    .hero-link-ghost { background: transparent; color: var(--muted); border-color: var(--border2); }
+    .hero-link-ghost:hover { color: var(--text); border-color: var(--muted); }
+
+    /* Right side: identity card */
+    .identity-card {
+      opacity: 0; animation: fadeIn 1s 0.8s forwards;
+    }
+
+    .id-label {
+      font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.25em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 2rem;
+    }
+
+    .id-rows { border: 1px solid var(--border); }
+    .id-row {
+      display: flex; align-items: baseline;
+      padding: 1.1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+    .id-row:last-child { border-bottom: none; }
+    .id-row:hover { background: var(--surface); }
+    .id-key { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); width: 90px; flex-shrink: 0; }
+    .id-val { font-size: 0.9rem; color: var(--text); }
+    .id-val-accent { color: var(--accent); font-family: var(--mono); font-size: 0.82rem; }
+
+    .id-divider { height: 2rem; }
+
+    .id-quote {
+      border-left: 2px solid var(--accent2);
+      padding: 1.25rem 1.5rem;
+      background: var(--surface);
+      font-family: var(--serif);
+      font-size: 1.05rem; font-style: italic;
+      color: var(--muted2); line-height: 1.6;
+    }
+
+    /* ── EXPERIENCE ── Full width sections ── */
+    .full-section { position: relative; z-index: 1; border-top: 1px solid var(--border); }
+    .full-inner { padding: 6rem 5%; max-width: 100%; }
+
+    .section-header {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 4rem; padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-title { font-family: var(--serif); font-size: 2.5rem; font-style: italic; color: var(--text); }
+    .section-num { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.2em; color: var(--muted); }
+
+    /* Stats row */
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); margin-bottom: 4rem; }
+    .stat-box { background: var(--surface); padding: 2rem 2.5rem; position: relative; overflow: hidden; transition: background 0.2s; }
+    .stat-box:hover { background: var(--surface2); }
+    .stat-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(to right, var(--accent), transparent); opacity: 0; transition: opacity 0.3s; }
+    .stat-box:hover::before { opacity: 1; }
+    .stat-n { font-family: var(--serif); font-size: 3rem; color: var(--accent); line-height: 1; margin-bottom: 0.5rem; }
+    .stat-l { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+
+    /* Experience timeline */
+    .exp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+    .exp-card { background: var(--surface); padding: 2.5rem; transition: background 0.2s; position: relative; overflow: hidden; }
+    .exp-card:hover { background: var(--surface2); }
+    .exp-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px; background: linear-gradient(to right, var(--accent2), transparent); transform: scaleX(0); transition: transform 0.4s; transform-origin: left; }
+    .exp-card:hover::after { transform: scaleX(1); }
+    .exp-period { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.15em; color: var(--accent); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    .exp-period::before { content: ''; width: 16px; height: 1px; background: var(--accent2); }
+    .exp-role { font-family: var(--serif); font-size: 1.3rem; color: var(--text); margin-bottom: 0.25rem; }
+    .exp-org { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 1rem; }
+    .exp-desc { font-size: 0.83rem; color: var(--muted2); line-height: 1.8; margin-bottom: 1.25rem; }
+    .exp-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .exp-tag { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.08em; color: var(--muted); border: 1px solid var(--border2); padding: 0.2rem 0.55rem; }
+    .exp-status-badge { position: absolute; top: 1.5rem; right: 1.5rem; font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); border: 1px solid var(--accent2); padding: 0.2rem 0.5rem; }
+
+    /* ── BELIEFS ── */
+    .beliefs-section { background: var(--bg2); }
+    .beliefs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--border); }
+    .belief { padding: 3rem 2.5rem; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); position: relative; overflow: hidden; transition: background 0.3s; }
+    .belief:nth-child(3n) { border-right: none; }
+    .belief:nth-child(4), .belief:nth-child(5), .belief:nth-child(6) { border-bottom: none; }
+    .belief:hover { background: var(--surface); }
+    .belief-idx { font-family: var(--serif); font-size: 4rem; font-weight: 700; color: var(--border2); position: absolute; top: 1rem; right: 1.5rem; line-height: 1; transition: color 0.3s; }
+    .belief:hover .belief-idx { color: var(--border); }
+    .belief-title { font-size: 1.05rem; color: var(--text); margin-bottom: 0.75rem; font-weight: 400; position: relative; z-index: 1; }
+    .belief-body { font-size: 0.82rem; color: var(--muted); line-height: 1.8; position: relative; z-index: 1; }
+
+    /* ── NOW ── */
+    .now-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); }
+    .now-card { background: var(--surface); padding: 2.5rem; transition: background 0.2s; }
+    .now-card:hover { background: var(--surface2); }
+    .now-pulse { display: flex; align-items: center; gap: 0.5rem; font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
+    .pulse-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: blink 2s infinite; }
+    .now-title { font-family: var(--serif); font-size: 1.2rem; color: var(--text); margin-bottom: 0.5rem; }
+    .now-desc { font-size: 0.82rem; color: var(--muted2); line-height: 1.75; }
+
+    /* ── WRITING ── */
+    .writing-section { background: var(--bg2); }
+    .writing-list { border: 1px solid var(--border); }
+    .writing-item { display: flex; align-items: center; justify-content: space-between; padding: 2rem 2.5rem; border-bottom: 1px solid var(--border); text-decoration: none; transition: background 0.2s, padding-left 0.25s; background: var(--surface); }
+    .writing-item:last-child { border-bottom: none; }
+    .writing-item:hover { background: var(--surface2); padding-left: 3rem; }
+    .writing-platform { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); width: 100px; flex-shrink: 0; }
+    .writing-title { font-size: 1rem; color: var(--text); font-weight: 400; }
+    .writing-desc { font-family: var(--mono); font-size: 0.62rem; color: var(--muted); margin-top: 0.2rem; }
+    .writing-arrow { font-family: var(--mono); color: var(--muted); font-size: 1rem; transition: color 0.2s, transform 0.2s; }
+    .writing-item:hover .writing-arrow { color: var(--accent); transform: translateX(6px); }
+
+    /* ── CONTACT ── */
+    .contact-section { border-top: 1px solid var(--border); }
+    .contact-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+    .contact-left { padding: 6rem 5% 6rem 5%; border-right: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; }
+    .contact-right { padding: 6rem 5%; display: flex; flex-direction: column; justify-content: center; }
+    .contact-heading { font-family: var(--serif); font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1.1; color: var(--text); margin-bottom: 1.5rem; }
+    .contact-heading em { font-style: italic; color: var(--accent); }
+    .contact-sub { font-size: 0.9rem; color: var(--muted); line-height: 1.85; }
+    .contact-methods { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+    .contact-row { background: var(--surface); padding: 1.5rem 2rem; display: flex; align-items: center; gap: 1.5rem; text-decoration: none; transition: background 0.2s; border-bottom: 1px solid var(--border); }
+    .contact-row:last-child { border-bottom: none; }
+    .contact-row:hover { background: var(--surface2); }
+    .contact-icon { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); width: 70px; flex-shrink: 0; }
+    .contact-val { font-size: 0.9rem; color: var(--text); }
+
+    /* Footer */
+    footer { border-top: 1px solid var(--border); padding: 2rem 5%; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 1; }
+    .footer-l { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.08em; color: var(--muted); }
+    .footer-r { font-family: var(--mono); font-size: 0.62rem; color: var(--accent2); letter-spacing: 0.08em; }
+
+    /* Animations */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.75s, transform 0.75s; }
+    .reveal.visible { opacity: 1; transform: none; }
+    .reveal-d1 { transition-delay: 0.1s; }
+    .reveal-d2 { transition-delay: 0.2s; }
+    .reveal-d3 { transition-delay: 0.3s; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; }
+      .hero-left { border-right: none; border-bottom: 1px solid var(--border); padding: 7rem 0 3rem; }
+      .hero-right { padding: 3rem 0 5rem; }
+      .exp-grid { grid-template-columns: 1fr; }
+      .beliefs-grid { grid-template-columns: 1fr; }
+      .belief { border-right: none; }
+      .belief:nth-child(n) { border-bottom: 1px solid var(--border); }
+      .belief:last-child { border-bottom: none; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .now-grid { grid-template-columns: 1fr; }
+      .contact-inner { grid-template-columns: 1fr; }
+      .contact-left { border-right: none; border-bottom: 1px solid var(--border); padding: 4rem 5%; }
+      .contact-right { padding: 4rem 5%; }
+      nav { padding: 1rem 5%; }
+      .nav-links { display: none; }
+      footer { flex-direction: column; gap: 0.5rem; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Cursor -->
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- Background -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <!-- Nav -->
+  <nav id="nav">
+    <a class="nav-logo" href="#">
+      <span class="nav-logo-dot"></span>
+      ordinarymo
+    </a>
+    <ul class="nav-links">
+      <li><a href="#experience">经历</a></li>
+      <li><a href="#beliefs">理念</a></li>
+      <li><a href="#now">现在</a></li>
+      <li><a href="#writing">写作</a></li>
+      <li><a href="#contact">联系</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-left">
+      <div class="hero-kicker">19岁 · Gap Year · 数字游民</div>
+      <h1 class="hero-name">Blaze</h1>
+      <div class="hero-name-sub">Long game, real moves.</div>
+      <p class="hero-desc">
+        用长期主义的视角，记录投资与 AI 工具的真实摸索过程。
+        不做宏大叙事，只做真实判断。先行动，后摸索。
+      </p>
+      <div class="hero-links">
+        <a href="#experience" class="hero-link hero-link-primary">查看经历</a>
+        <a href="product.html" class="hero-link hero-link-ghost">Claude 搭建包 →</a>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="identity-card">
+        <div class="id-label">// profile.json</div>
+        <div class="id-rows">
+          <div class="id-row"><span class="id-key">name</span><span class="id-val">Blaze Zhang</span></div>
+          <div class="id-row"><span class="id-key">alias</span><span class="id-val-accent">ordinarymo</span></div>
+          <div class="id-row"><span class="id-key">age</span><span class="id-val">19</span></div>
+          <div class="id-row"><span class="id-key">status</span><span class="id-val-accent">Gap Year ↗</span></div>
+          <div class="id-row"><span class="id-key">next</span><span class="id-val">Monash University</span></div>
+          <div class="id-row"><span class="id-key">focus</span><span class="id-val">投资 × AI × 一人公司</span></div>
+          <div class="id-row"><span class="id-key">wechat</span><span class="id-val-accent">ordinarymo</span></div>
+        </div>
+        <div class="id-divider"></div>
+        <div class="id-quote">
+          "不假装自己什么都懂，<br>但也不停在舒适区里。"
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Experience -->
+  <section class="full-section" id="experience">
+    <div class="full-inner">
+      <div class="section-header reveal">
+        <h2 class="section-title">经历与项目</h2>
+        <span class="section-num">01 / EXPERIENCE</span>
+      </div>
+
+      <div class="stats-row reveal">
+        <div class="stat-box">
+          <div class="stat-n">9</div>
+          <div class="stat-l">理财陪跑客户</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-n">5+</div>
+          <div class="stat-l">月实战经验</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-n">320+</div>
+          <div class="stat-l">单篇内容浏览</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-n">¥200</div>
+          <div class="stat-l">DM 咨询 / 小时</div>
+        </div>
+      </div>
+
+      <div class="exp-grid reveal">
+        <div class="exp-card">
+          <div class="exp-status-badge">进行中</div>
+          <div class="exp-period">2025.12 — 至今</div>
+          <div class="exp-role">理财陪跑顾问</div>
+          <div class="exp-org">独立副业 · ordinarymo</div>
+          <div class="exp-desc">为学生和理财小白提供长期、低频的投资陪跑服务。帮助客户建立个人投资框架，理解市场波动与风险管理，培养长期主义心态。不承诺收益，强调风险自担与独立判断。以转介绍为主要增长方式，5个月积累9位客户。</div>
+          <div class="exp-tags">
+            <span class="exp-tag">投资教育</span>
+            <span class="exp-tag">长期主义</span>
+            <span class="exp-tag">一对一</span>
+            <span class="exp-tag">转介绍</span>
+          </div>
+        </div>
+
+        <div class="exp-card">
+          <div class="exp-status-badge">验证中</div>
+          <div class="exp-period">2026.04 — 至今</div>
+          <div class="exp-role">Claude × Notion 搭建包</div>
+          <div class="exp-org">产品实验 · ordinarymo</div>
+          <div class="exp-desc">独立研发的 AI 工具配置方案。将 Claude 与 Notion 结合，构建动态上下文记忆系统，解决 Claude 无法持久记忆用户信息的核心痛点。在小红书发布教程，单篇获得 320+ 浏览、26 点赞，验证付费需求后上线销售，定价 ¥19.9。</div>
+          <div class="exp-tags">
+            <span class="exp-tag">产品开发</span>
+            <span class="exp-tag">内容验证</span>
+            <span class="exp-tag">Claude</span>
+            <span class="exp-tag">Notion</span>
+          </div>
+        </div>
+
+        <div class="exp-card">
+          <div class="exp-status-badge">开放中</div>
+          <div class="exp-period">2025.12 — 至今</div>
+          <div class="exp-role">DM 一对一咨询</div>
+          <div class="exp-org">独立服务 · ordinarymo</div>
+          <div class="exp-desc">提供私信咨询服务，覆盖 AI 工具使用、投资理念、Gap Year 规划等话题。专注帮助对方理清思路、找到下一步行动方向，而非给出标准答案。¥200 / 小时。</div>
+          <div class="exp-tags">
+            <span class="exp-tag">AI 工具</span>
+            <span class="exp-tag">投资理念</span>
+            <span class="exp-tag">规划咨询</span>
+          </div>
+        </div>
+
+        <div class="exp-card">
+          <div class="exp-status-badge">进行中</div>
+          <div class="exp-period">2026.04 — 至今</div>
+          <div class="exp-role">Gap Year 数字游民实验</div>
+          <div class="exp-org">个人项目 · 自主规划</div>
+          <div class="exp-desc">主动选择 Gap Year，以实验心态探索一人公司、内容创业与长期投资的交叉可能性。在小红书、X、公众号同步记录摸索过程，积累真实的第一手经验。即将入读 Monash University。</div>
+          <div class="exp-tags">
+            <span class="exp-tag">内容创作</span>
+            <span class="exp-tag">一人公司</span>
+            <span class="exp-tag">数字游民</span>
+            <span class="exp-tag">Monash</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Beliefs -->
+  <section class="full-section beliefs-section" id="beliefs">
+    <div class="full-inner">
+      <div class="section-header reveal">
+        <h2 class="section-title">我相信什么</h2>
+        <span class="section-num">02 / BELIEFS</span>
+      </div>
+      <div class="beliefs-grid reveal">
+        <div class="belief">
+          <div class="belief-idx">01</div>
+          <h3 class="belief-title">慢就是快</h3>
+          <p class="belief-body">复利需要时间。急着看结果的人，往往在最关键的时候出局。长期主义不是口号，是真实的行动框架。</p>
+        </div>
+        <div class="belief">
+          <div class="belief-idx">02</div>
+          <h3 class="belief-title">创业是实验</h3>
+          <p class="belief-body">不害怕失败，因为每个实验都有数据。先行动，后摸索。跌倒后爬起来的次数，决定你走多远。</p>
+        </div>
+        <div class="belief">
+          <div class="belief-idx">03</div>
+          <h3 class="belief-title">能力圈边界可以推</h3>
+          <p class="belief-body">不假装自己什么都懂，但也不停在舒适区里。知道自己在哪里，才能有意识地往外走一步。</p>
+        </div>
+        <div class="belief">
+          <div class="belief-idx">04</div>
+          <h3 class="belief-title">先验证，再做产品</h3>
+          <p class="belief-body">没有人付钱之前，一切都是假设。48小时找到第一个付费客户，比写一年商业计划书更有价值。</p>
+        </div>
+        <div class="belief">
+          <div class="belief-idx">05</div>
+          <h3 class="belief-title">记录即资产</h3>
+          <p class="belief-body">把摸索的过程写下来。那些弯路、判断、情绪——会成为别人愿意看的内容，也是你最诚实的镜子。</p>
+        </div>
+        <div class="belief">
+          <div class="belief-idx">06</div>
+          <h3 class="belief-title">风险自担，波动正常</h3>
+          <p class="belief-body">不承诺收益，不贩卖焦虑。投资是认知的变现，而认知需要时间积累。接受波动，才能走完全程。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Now -->
+  <section class="full-section" id="now">
+    <div class="full-inner">
+      <div class="section-header reveal">
+        <h2 class="section-title">现在在做</h2>
+        <span class="section-num">03 / NOW</span>
+      </div>
+      <div class="now-grid reveal">
+        <div class="now-card">
+          <div class="now-pulse"><span class="pulse-dot"></span>进行中</div>
+          <div class="now-title">Claude × Notion 搭建包验证</div>
+          <div class="now-desc">在小红书跑通内容→私信→变现的完整链路，第三篇即将发出，盯紧48小时私信转化数据。</div>
+        </div>
+        <div class="now-card">
+          <div class="now-pulse"><span class="pulse-dot"></span>进行中</div>
+          <div class="now-title">理财陪跑客户服务</div>
+          <div class="now-desc">维护9位现有客户，以转介绍为主要增长方式，不主动拉新，专注服务质量。</div>
+        </div>
+        <div class="now-card">
+          <div class="now-pulse"><span class="pulse-dot"></span>持续</div>
+          <div class="now-title">每日内容记录</div>
+          <div class="now-desc">在 X 和公众号「赛博胶囊2077」持续更新投资判断、AI 工具实验与 Gap Year 的真实摸索。</div>
+        </div>
+        <div class="now-card">
+          <div class="now-pulse" style="color:var(--muted2)">即将</div>
+          <div class="now-title">Monash University</div>
+          <div class="now-desc">Gap Year 结束后入读 Monash，但现在更重要的事是把手里的实验跑完、第一笔钱收到。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Writing -->
+  <section class="full-section writing-section" id="writing">
+    <div class="full-inner">
+      <div class="section-header reveal">
+        <h2 class="section-title">写作与平台</h2>
+        <span class="section-num">04 / WRITING</span>
+      </div>
+      <div class="writing-list reveal">
+        <a class="writing-item" href="https://x.com/ordinarymo666" target="_blank" rel="noopener">
+          <span class="writing-platform">X / Twitter</span>
+          <div><div class="writing-title">@ordinarymo666</div><div class="writing-desc">每日投资判断与 AI 工具实验记录</div></div>
+          <span class="writing-arrow">→</span>
+        </a>
+        <a class="writing-item" href="#" target="_blank" rel="noopener">
+          <span class="writing-platform">公众号</span>
+          <div><div class="writing-title">赛博胶囊2077</div><div class="writing-desc">记录当下的判断、生活里的细小感悟与真实的思考</div></div>
+          <span class="writing-arrow">→</span>
+        </a>
+        <a class="writing-item" href="https://www.linkedin.com/in/blaze-zhang-91a90b392/" target="_blank" rel="noopener">
+          <span class="writing-platform">LinkedIn</span>
+          <div><div class="writing-title">Blaze Zhang</div><div class="writing-desc">职业背景与项目经历</div></div>
+          <span class="writing-arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section class="contact-section" id="contact">
+    <div class="contact-inner">
+      <div class="contact-left reveal">
+        <h2 class="contact-heading">聊聊？<br><em>随时欢迎。</em></h2>
+        <p class="contact-sub">理财陪跑、AI 工具答疑、DM 咨询——或者只是想交流。<br>微信找我，说明来意就行。</p>
+      </div>
+      <div class="contact-right reveal reveal-d1">
+        <div class="contact-methods">
+          <div class="contact-row"><span class="contact-icon">微信</span><span class="contact-val">ordinarymo</span></div>
+          <a class="contact-row" href="https://x.com/ordinarymo666" target="_blank" rel="noopener"><span class="contact-icon">X</span><span class="contact-val">@ordinarymo666</span></a>
+          <a class="contact-row" href="https://www.linkedin.com/in/blaze-zhang-91a90b392/" target="_blank" rel="noopener"><span class="contact-icon">LinkedIn</span><span class="contact-val">Blaze Zhang</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span class="footer-l">© 2026 ordinarymo · 赛博胶囊2077</span>
+    <span class="footer-r">Long game, real moves.</span>
+  </footer>
+
+  <script>
+    // Nav
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 40));
+
+    // Cursor
+    const cursor = document.getElementById('cursor');
+    const ring = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    window.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; cursor.style.left = mx + 'px'; cursor.style.top = my + 'px'; });
+    function animateRing() { rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12; ring.style.left = rx + 'px'; ring.style.top = ry + 'px'; requestAnimationFrame(animateRing); }
+    animateRing();
+    document.querySelectorAll('a, button').forEach(el => {
+      el.addEventListener('mouseenter', () => { cursor.style.width = '12px'; cursor.style.height = '12px'; ring.style.width = '50px'; ring.style.height = '50px'; ring.style.borderColor = 'rgba(165,148,249,0.6)'; });
+      el.addEventListener('mouseleave', () => { cursor.style.width = '8px'; cursor.style.height = '8px'; ring.style.width = '36px'; ring.style.height = '36px'; ring.style.borderColor = 'rgba(165,148,249,0.4)'; });
+    });
+
+    // Scroll reveal
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+    }, { threshold: 0.07 });
+    document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+  </script>
+</body>
+</html>
